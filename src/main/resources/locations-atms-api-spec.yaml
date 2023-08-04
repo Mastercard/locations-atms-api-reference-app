@@ -1,0 +1,539 @@
+openapi: 3.0.1
+info:
+  title: Atms Locations API
+  description: Atms Locations API
+  contact:
+    name: API Support
+    email: apisupport@mastercard.com
+    url: https://developer.mastercard.com/support
+  version: 2.0.0
+servers:
+  - url: https://api.mastercard.com/locations/atms
+    description: Production server
+  - url: https://sandbox.api.mastercard.com/locations/atms
+    description: Sandbox server
+tags:
+  - name: Countries
+    description: Retrieve a list of countries and country subdivisions
+  - name: Atms
+    description: Retrieve atm detail for a given geo location
+paths:
+  /countries:
+    get:
+      tags:
+        - Countries
+      summary: Get a list of countries
+      description: Returns a list of countries containing ATMs
+      operationId: getCountries
+      responses:
+        '200':
+          $ref: '#/components/responses/Countries'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+  /country-subdivisions:
+    get:
+      tags:
+        - Countries
+      summary: Get a list of country subdivisions
+      description: Returns a list of country subdivisions for a given country
+      operationId: getCountrySubdivisions
+      parameters:
+        - $ref: '#/components/parameters/CountryParam'
+      responses:
+        '200':
+          $ref: '#/components/responses/CountrySubdivisions'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+  /searches:
+    post:
+      tags:
+        - Atms
+      summary: Get a list of atm details
+      description: Returns detailed information on atms based on the provided query parameters
+      operationId: getAtms
+      parameters:
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/OffsetParam'
+        - $ref: '#/components/parameters/DistanceParam'
+        - $ref: '#/components/parameters/DistanceUnitParam'
+      requestBody:
+        $ref: '#/components/requestBodies/AtmSearch'
+      responses:
+        '200':
+          $ref: '#/components/responses/Atms'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+components:
+  requestBodies:
+    AtmSearch:
+      description: A JSON object containing item data
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AtmSearch'
+  parameters:
+    CountryParam:
+      name: country_code
+      in: query
+      description: Country Code
+      required: true
+      schema:
+        type: string
+      example: 'USA'
+    LimitParam:
+      name: limit
+      in: query
+      description: The number of items to be retrieved
+      required: false
+      schema:
+        type: integer
+      example: 25
+    OffsetParam:
+      name: offset
+      in: query
+      description: The page offset used for the query
+      required: false
+      schema:
+        type: integer
+      example: 1
+    DistanceParam:
+      name: distance
+      in: query
+      description: "Distance measurement for calculating the radius search. Optional
+            The length of distance from the centroid point. Value string(<25). The
+            default will be 5 units"
+      required: false
+      schema:
+        type: integer
+      example: 5
+    DistanceUnitParam:
+      name: distance_unit
+      in: query
+      description: "Unit of measurement for calculating the radius search. Optional.
+            Measurement of distance unit in miles or kilometers. Value string (MILE or
+            KM)"
+      required: false
+      schema:
+        type: string
+        enum: [MILE, KM]
+      example: MILE
+  schemas:
+    Country:
+      description: "Available information for the Country such as the name and code"
+      type: object
+      properties:
+        countryCode:
+          type: string
+          minLength: 3
+          maxLength: 3
+          description: "Three digit alpha country code as defined in ISO 3166-1"
+          example: 'AUS'
+        countryName:
+          type: string
+          description: Name of the country
+          example: 'Australia'
+      example:
+        Country:
+          countryCode: 'AUS'
+          countryName: 'Australia'
+    CountrySubdivision:
+      description: "Available information the Country Subdivision such as the name and code"
+      type: object
+      properties:
+        countrySubdivisionCode:
+          type: string
+          minLength: 2
+          maxLength: 2
+          description: "Abbreviated code for the state or province"
+          example: 'AL'
+        countrySubdivisionName:
+          type: string
+          description: Name of the country subdivision
+          example: 'Alabama'
+      example:
+        CountrySubdivision:
+          countrySubdivisionCode: 'AL'
+          countrySubdivisionName: 'Alabama'
+    AtmSearch:
+      title: AtmSearch
+      description: Atm Search Request Info
+      type: object
+      properties:
+        addressLine1:
+          type: string
+          description: "Line 1 of the street address for the atm location. Usually
+            includes the street number and name. This parameter is ignored if latitude
+            and longitude are provided. If you provide this parameter you must also
+            provide the Country parameter and either City parameter or PostalCode
+            parameter."
+          example: "4033 Veterans Memorial Pkwy"
+        addressLine2:
+          type: string
+          description: "Line 2 of the street address usually an apartment number or
+            suite number. This parameter is used rarely and is ignored if latitude
+            and longitude are provided. If you provide this parameter you must also
+            provide the Country parameter and either City parameter or PostalCode
+            parameter."
+          example: ""
+        city:
+          type: string
+          description: "The name of the city for a ATM location. This parameter
+            is ignored if latitude and longitude are provided. If you provide this
+            parameter you must also provide the Country parameter."
+          example: "SAINT PETERS"
+        countryCode:
+          type: string
+          description: "Any three character country code for an ATM location. Valid values
+            are three digit alpha country codes. This parameter is ignored if latitude
+            and longitude are provided. This parameter is required if any other address
+            information is provided including AddressLine1 AddressLine2 City PostalCode
+            or CountrySubdivision."
+          example: "USA"
+        countrySubdivisionCode:
+          type: string
+          description: "The state or province for an ATM location (only supported
+            for US and Canada locations). This parameter is ignored if latitude and
+            longitude are provided. If you provide this parameter you must also provide
+            the Country parameter."
+          example: "MO"
+        latitude:
+          type: string
+          description: "The latitude of a ATM location. If latitude is provided
+            longitude must also be provided."
+          example: "38.794676"
+        longitude:
+          type: string
+          description: "The longitude of a ATM location. If longitude is provided
+            latitude must also be provided."
+          example: "-90.5689"
+        postalCode:
+          type: string
+          description: "The zip code or postal code for an ATM location. This parameter
+            is ignored if latitude and longitude are provided. If you provide this
+            parameter you must also provide the Country parameter."
+          example: "63376"
+    Atm:
+      title: Atm
+      description: Atm detail information
+      type: object
+      properties:
+        accessFees:
+          type: string
+          description: "This value indicates under what conditions access fees are charged. Options are UNKNOWN, DOMESTIC, INTERNATIONAL, DOMESTIC_AND_INTERNATIONAL, NO_FEE."
+          example: "DOMESTIC"
+        addressLine1:
+          type: string
+          description: "Line 1 of the street address for the atm location. Usually includes the street number and name."
+          example: "1 Oak Street"
+        addressLine2:
+          type: string
+          description: "Line 2 of the street address usually an apartment number or suite number."
+          example: "Apt 1"
+        airportCode:
+          type: string
+          description: "The Airport Code"
+          example: "STL"
+        atmTerminalId:
+          type: string
+          description: "The ATM Terminal Id"
+          example: "NH044143"
+        availability:
+          type: string
+          description: "This value indicates the availability hours of the ATM. Options are UNKNOWN, ALWAYS_AVAILABLE, BUSINESS_HOURS, IRREGULAR_HOURS."
+          example: "BUSINESS_HOURS"
+        camera:
+          type: string
+          description: "This value indicates whether or not a security camera is present or near ATM"
+          example: "NO"
+        countryCode:
+          type: string
+          description: "Three digit alpha country code as defined in ISO"
+          example: "USA"
+        countryName:
+          type: string
+          description: "Name of the country."
+          example: "United States"
+        countrySubdivisionCode:
+          type: string
+          description: "Code of the state or province for an ATM location."
+          example: "MO"
+        countrySubdivisionName:
+          type: string
+          description: "Name of the state or province for an ATM location."
+          example: "Missouri"
+        city:
+          type: string
+          description: "The name of the city for an ATM location."
+          example: "OFallon"
+        distance:
+          type: number
+          description: "This is the numerical value for the distance from the provided location to the selected ATM."
+          format: double
+          example: 1.75723000000001
+        distanceUnit:
+          type: string
+          description: "This is the unit of measure value for the distance from the provided location to the selected ATM. Options are KM and MILE."
+          example: "MILE"
+        geocodingResult:
+          type: string
+          description: "GeocodingResult for the atm"
+          example: 'G3'
+        handicapAccessible:
+          type: string
+          description: "This indicates whether the ATM has the ability to read chip cards or not. Options are UNKNOWN, IS_HANDICAP_ACCESSIBLE, NOT_HANDICAP_ACCESSIBLE."
+          example: "IS_HANDICAP_ACCESSIBLE"
+        hasSharedDeposit:
+          type: string
+          description: "This value indicates whether or not the ATM participates in the MasterCard Shared Deposit network. Options are YES or NO."
+          example: "YES"
+        isSurchargeFreeAlliance:
+          type: string
+          description: "This value indicates whether or not the ATM participates in the MasterCard Shared (only) Surcharge Free Alliance network. Options are YES or NO."
+          example: "YES"
+        latitude:
+          type: string
+          description: "The latitude of the atm"
+          example: "38.670337"
+        locationName:
+          type: string
+          description: "The name of the ATM location"
+          example: "That Bank"
+        locationType:
+          type: string
+          description: "Type of location for the ATM. Options are OTHER, AIRPORT, HOSPITAL, FINANCIAL_INSTITUTION."
+          example: "FINANCIAL_INSTITUTION"
+        longitude:
+          type: string
+          description: "The longitude of the atm."
+          example: "-90.443727"
+        owner:
+          type: string
+          description: "This is the DBA name of the financial institution affiliate or independent service organization."
+          example: "That Bank LLC"
+        ownerICA:
+          type: string
+          description: "This is the ICA of the entity that owns the ATM"
+          example: "9386"
+        postalCode:
+          type: string
+          description: "The postal code of the ATM location."
+          example: "63366"
+        routeTransactionNumber:
+          type: string
+          description: "The routing transaction number"
+          example: "840180546"
+        sponsor:
+          type: string
+          description: "This is the legal or business name of the entity that sponsors the owner of the ATM into the MasterCard network."
+          example: "That Bank LLC"
+        sponsorICA:
+          type: string
+          description: "This is the ICA of entity that sponsors the owner of the ATM"
+          example: "9386"
+        supportsEmv:
+          type: string
+          description: "This indicates whether the ATM has the ability to read chip cards or not. Options are UNKNOWN, SUPPORTS_EMV, DOES_NOT_SUPPORT_EMV."
+          example: "SUPPORTS_EMV"
+        surchargeFreeAllianceNetwork:
+          type: string
+          description: "This value indicates whether or not the ATM participates in the MasterCard Shared (only) Surcharge Free Alliance network. Options are DOES_NOT_PARTICIPATE_IN_SFA, ALLPOINT_PREPAID, MONEYPASS_DEBIT, and ALL_SURCHARGE_FREE."
+          example: "DOES_NOT_PARTICIPATE_IN_SFA"
+    Atms:
+      title: Atms
+      type: object
+      properties:
+        count:
+          type: integer
+          format: int32
+          description: "The number of items in the retrieved data set"
+          example: 10
+        limit:
+          type: integer
+          format: int32
+          description: "The number of items requested to be retrieved"
+          example: 10
+        offset:
+          type: integer
+          format: int32
+          description: "The page offset used for the query"
+          example: 1
+        total:
+          type: integer
+          format: int32
+          description: "The total number of atms available to be retrieved"
+          example: 210
+        atms:
+          type: array
+          description: "The list of atms retrieved"
+          items:
+            $ref: '#/components/schemas/Atm'
+    Error:
+      description: Details of the error condition such as the source of the error, reason code for the error,
+        if the error is recoverable, and details about the error
+      required:
+        - Description
+        - ReasonCode
+        - Recoverable
+        - Source
+      type: object
+      properties:
+        Source:
+          description: The application that generated this error
+          type: string
+          minLength: 0
+          maxLength: 150
+          example: 'latitude'
+        ReasonCode:
+          description: A unique constant identifying the error case encountered during transaction processing
+          type: string
+          minLength: 0
+          maxLength: 150
+          example: 'INVALID_INPUT_VALUE'
+        Description:
+          description: Short description of the ReasonCode field
+          type: string
+          minLength: 0
+          maxLength: 150
+          example: 'Latitude is missing, invalid, or could not be determined from address fields.'
+        Recoverable:
+          description: Indicates whether this error will always be returned for this request, or retrying could change the outcome
+          type: boolean
+          example: 'false'
+        Details:
+          description: Description of the issue
+          example: 'Latitude is missing, invalid, or could not be determined from address fields.'
+          type: string
+          minLength: 0
+          maxLength: 150
+          nullable: true
+    ErrorResponse:
+      description: Only returned in the event of an error condition
+      required:
+        - Errors
+      type: object
+      properties:
+        Errors:
+          $ref: '#/components/schemas/Errors'
+    Errors:
+      description: 'Only returned in the event of an error condition'
+      required:
+        - Error
+      type: object
+      properties:
+        Error:
+          type: array
+          items:
+            $ref: '#/components/schemas/Error'
+          description: 'An error object'
+          example:
+            - Error:
+                Source: latitude
+                ReasonCode: INVALID_INPUT_VALUE
+                Description: "Latitude is missing, invalid, or could not be determined from address fields."
+                Recoverable: false
+                Details: null
+      example:
+        Errors:
+          - Error:
+              Source: latitude
+              ReasonCode: INVALID_INPUT_VALUE
+              Description: "Latitude is missing, invalid, or could not be determined from address fields."
+              Recoverable: false
+              Details: null
+
+    Countries:
+      description: List of countries
+      type: object
+      properties:
+        countries:
+          type: array
+          description: countries
+          items:
+            $ref: '#/components/schemas/Country'
+          example:
+            -  countryName: United States
+               countryCode: USA
+    CountrySubdivisions:
+      description: List of country subdivisions
+      type: object
+      properties:
+        countrySubdivisions:
+          type: array
+          description: countrySubdivisions
+          items:
+            $ref: '#/components/schemas/CountrySubdivision'
+          example:
+            -  countrySubdivisionName: Alabama
+               countrySubdivisionCode: AL
+  responses:
+    Countries:
+      description: List of Countries
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Countries'
+    CountrySubdivisions:
+      description: List of Country Subdivisions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CountrySubdivisions'
+    Atms:
+      description: List of ATM details
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Atms'
+    BadRequestError:
+      description: Something was wrong with the request.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            Errors:
+              - Error:
+                  Source: latitude
+                  ReasonCode: INVALID_INPUT_VALUE
+                  Description: "Latitude is missing, invalid, or could not be determined from address fields."
+                  Recoverable: false
+                  Details: null
+    UnauthorizedError:
+      description: Authentication information was missing or invalid.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            Errors:
+              - Error:
+                  Source: locations-atms-api
+                  ReasonCode: UNAUTHORIZED
+                  Description: "We couldn't recognize you"
+                  Recoverable: false
+                  Details: "Full authentication is required to access this resource"
+    ForbiddenError:
+      description: Insufficient permissions for interacting with the resource.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            Errors:
+              - Error:
+                  Source:  locations-atms-api
+                  ReasonCode: PERMISSION_DENIED
+                  Description: "You don't seem authorized to do that"
+                  Recoverable: false
+                  Details: "Reading atm information requires readonly permissions"
